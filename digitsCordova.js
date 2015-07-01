@@ -215,25 +215,25 @@
 	  "+967": "YE",
 	  "+260": "ZM",
 	  "+263": "ZW"
-	}	
-
-	function findRegion(number){
-		number = "" + number; //Make number to string
-		var code = '';
-		var search = '';
-		for (var i = 0; i < number.length; i++){
-			search += number[i];
-			if (regionCodes[search]) code = regionCodes[search];
-		}
-		return code;
 	}
 
-	
+	function getNumberAndRegion(num) {
+		num = "" + num;
+		for (var code in regionCodes) {
+			var split = num.split(code);
+			if (split.length > 1) {
+				return {number: split[1], region: regionCodes[code]};
+			}
+		}
+
+		return {number: num, region: ""};
+	}
+
 	var phone = {
 		number: '',
 		region: '',
 	};
-	
+
 	var smsInterceptor = function(){ return {turnOff: function(){}}};
 	document.addEventListener("deviceready", function(){
 		/*
@@ -241,9 +241,9 @@
 		 * This requires the com.simonmacdonald.telephonenumber cordova plugin
 		 */
 		var telephoneNumber = cordova.require("cordova/plugin/telephonenumber");
+
 	    telephoneNumber.get(function(num) {
-	      	phone.number = num;
-      		phone.region = findRegion(num);
+	      	phone = getNumberAndRegion(num);
 	    });
 
 	    /*
@@ -257,7 +257,8 @@
 
 	        document.addEventListener('onSMSArrive', function(e){
 	          var sms = e.data.body;
-	          var code = sms.split("code:")[1].split(".")[0].trim();
+	          var codeRegexp = RegExp(/[0-9]{6}/);
+	          var code = sms.match(codeRegexp);
 	          cb(code)
 	        });
 
@@ -273,7 +274,7 @@
 	    }
 	}, false);
 
-	
+
 
 
 	/*
@@ -346,7 +347,7 @@
 
 				if (cordova.InAppBrowser){
 					//Open inAppBrowser to the twitter digits site
-					
+
 					var openWindow = cordova.InAppBrowser.open('https://www.digits.com/login?consumer_key=' + _this.consumerKey + '&host=' + location.href, "_blank");
 					//listen to loadstart event which fires off whenever the inAppBrowser starts loading any site
 					openWindow.addEventListener('loadstart', function(event){
@@ -412,7 +413,7 @@
 				} else {
 					errorCallback('An error with inAppBrowser has occured, is this plugin installed?');
 				}
-			}, false);	
+			}, false);
 
 			return callbacks;
 		}
